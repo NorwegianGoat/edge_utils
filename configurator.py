@@ -4,7 +4,7 @@ import tarfile
 import os
 import logging
 import sys
-import pandas as pd
+import csv
 
 
 class Node:
@@ -60,11 +60,11 @@ def node_config(path: str):
     # If a path for a .csv file configuration is given the csv is parsed and then nodes are added
     if path:
         if os.path.exists(path):
-            df = pd.read_csv(path)
-            nodes = []
-            for index, data in df.iterrows():
-                nodes.append(
-                    Node(data["ip"], data["id"], data["key"], data["port"], data["bootnode"]))
+            with open(path, 'r') as file:
+                data = csv.reader(file, delimiter=',')
+                next(data)
+                nodes = [Node(row[0], row[1], row[2], row[3], row[4] == "True")
+                         for row in data]
         else:
             exit("Config file not found. Path may be wrong.")
     else:
