@@ -3,7 +3,7 @@ import requests
 import tarfile
 import os
 import logging
-import sys
+import time
 import csv
 import argparse
 
@@ -112,6 +112,15 @@ def start_validator(ip: str):
     os.system(command)
 
 
+def backup_data(backup_destination: str):
+    dest = os.path.join(backup_destination, "backup_"+str(time.time()))
+    os.makedirs(dest)
+    shutil.copy(os.path.join(__PATH, "genesis.json"),
+                os.path.join(dest, "genesis.json"))
+    shutil.copytree(os.path.join(__PATH, "data-dir"),
+                    os.path.join(dest, "data-dir"))
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
     # CLI command parsing
@@ -133,6 +142,11 @@ if __name__ == "__main__":
         "start_validator", help="Starts a previously configured validator.")
     start.add_argument('--ip', help="Your IP address.",
                        type=str, required=False)
+    # Backup blockchain data command
+    backup = subparser.add_parser(
+        "backup", help="Backups blockchain data and genesis.json file.")
+    backup.add_argument(
+        "--backup_dest", help="The path in which the backup has to be saved.", default=__PATH, type=str, required=False)
     # Parses the input
     args = parser.parse_args()
     # Executes the method
@@ -142,5 +156,7 @@ if __name__ == "__main__":
         generate_genesis(args.node_list, args.premine_list)
     elif args.command == "start_validator":
         start_validator(args.ip)
+    elif args.command == "backup":
+        backup_data(args.backup_dest)
     else:
-        exit("No command given.")
+        exit("Command not recognized.")
