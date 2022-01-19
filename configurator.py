@@ -97,6 +97,8 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
             exit("Premine file not found. Path may be wrong.")
     os.chdir(__PATH)
     os.system(command)
+    logging.info(
+        "Now you need to give the genesis file to the other nodes, so that they can use it to start the chain.")
 
 
 def start_validator():
