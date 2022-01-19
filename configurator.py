@@ -101,10 +101,10 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
         "Now you need to give the genesis file to the other nodes, so that they can use it to start the chain.")
 
 
-def start_validator():
+def start_validator(ip: str):
     os.chdir(__PATH)
     command = "./" + __SDK_NAME + \
-        " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 --seal"
+        " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 --nat " + ip + " --seal"
     os.system(command)
 
 
@@ -137,6 +137,6 @@ if __name__ == "__main__":
     elif args.command == "generate_genesis":
         generate_genesis(args.node_list, args.premine_list)
     elif args.command == "start_validator":
-        start_validator()
+        start_validator(args.ip)
     else:
         exit("No command given.")
