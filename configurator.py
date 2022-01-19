@@ -5,11 +5,12 @@ import os
 import logging
 import sys
 import csv
+import argparse
 
 
 class Node:
     # 1478 is the default libp2p port
-    def __init__(self, ip: str, id: str, key: str, port: str = "1478", bootnode: bool = False):
+    def __init__(self, ip: str, id: str, key: str, port: str, bootnode: bool):
         self.ip = ip
         self.id = id
         self.key = key
@@ -19,6 +20,9 @@ class Node:
     def is_bootnode(self):
         return self.bootnode
 
+    def get_key(self):
+        return self.key
+
     def get_multiaddr(self):
         return '/ip4/' + self.ip + "/tcp/" + self.port + "/p2p/" + self.id
 
@@ -27,8 +31,6 @@ __URL = "https://github.com/0xPolygon/polygon-edge/releases/download/v0.1.0/poly
 __PATH = "edge"
 __SDK_NAME = "polygon-sdk"
 __LOG_LEVEL = logging.INFO
-# __NODES = [Node("node ip","node id", ...), Node("node ip","node id", ...), ...]
-__NODES = []
 
 
 def sdk_init():
@@ -50,42 +52,73 @@ def sdk_init():
         os.chdir(__PATH)
         # SDK init
         logging.info("Generating secrets.")
-        os.system("./"+__SDK_NAME +
-                  " secrets init --data-dir chain-data > node.info")
+        command = "./"+__SDK_NAME + " secrets init --data-dir chain-data > node.info"
+        os.system(command)
     else:
-        print("Unable to download the SDK. Try again later or check the URL.")
+        exit("Unable to download the SDK. Try again later or check the URL.")
 
 
-def node_config(path: str):
-    # If a path for a .csv file configuration is given the csv is parsed and then nodes are added
-    if path:
-        if os.path.exists(path):
-            with open(path, 'r') as file:
+def node_config(node_list_path: str, premine_list_path: str):
+    # Nodes data retrival and nodes initialization
+    if os.path.exists(node_list_path):
+        with open(node_list_path, 'r') as file:
+            data = csv.reader(file, delimiter=',')
+            next(data)
+            nodes = [Node(row[0], row[1], row[2], row[3], row[4] == "True")
+                     for row in data]
+    else:
+        exit("Config file not found. Path may be wrong.")
+    n_bootnodes = 0
+    n_validators = 0
+    bootnodes = ""
+    validators = ""
+    # genesis command creation
+    for node in nodes:
+        if node.is_bootnode():
+            bootnodes += "--bootnode=" + node.get_multiaddr() + " "
+            n_bootnodes += 1
+        validators += "--ibft-validator=" + node.get_key() + " "
+        n_validators += 1
+    logging.info("Found " + str(n_bootnodes) +
+                 " bootnodes out of " + str(n_validators) + ".")
+    command = "./" + __SDK_NAME + " genesis --consensus ibft " + validators + bootnodes
+    # Pre-mined balances based on premine file
+    if premine_list_path:
+        if os.path.exists(premine_list_path):
+            logging.info("Found premine file.")
+            premine = ""
+            with open(premine_list_path, 'r') as file:
                 data = csv.reader(file, delimiter=',')
                 next(data)
-                nodes = [Node(row[0], row[1], row[2], row[3], row[4] == "True")
-                         for row in data]
+                for row in data:
+                    premine += "--premine " + row[0]+":"+row[1]+" "
+                command += premine
         else:
-            exit("Config file not found. Path may be wrong.")
-    else:
-        if len(__NODES):
-            nodes = __NODES
-        else:
-            exit("You have not provided a path to a file containing a list of nodes nor a list of nodes in the script. Please do one of these two things.")
-    bootnodes = [node for node in nodes if node.is_bootnode()]
-    logging.info("Found " + str(len(bootnodes)) +
-                 " bootnodes out of " + str(len(nodes)) + ".")
+            exit("Premine file not found. Path may be wrong.")
+    os.chdir(__PATH)
+    os.system(command)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "init":
-            sdk_init()
-        elif sys.argv[1] == "config":
-            if len(sys.argv) > 2:
-                node_config(sys.argv[2])
-            else:
-                node_config(None)
+    # CLI command parsing
+    parser = argparse.ArgumentParser(
+        description="Utility for edge-sdk configuration.")
+    subparser = parser.add_subparsers(dest="command")
+    # Init command
+    init = subparser.add_parser(
+        "init", help="Download the SDK and initializes node secrets.")
+    # Config command
+    config = subparser.add_parser(
+        "config", help="Configures the genesis.json using a node_list and an optional premine_list.")
+    config.add_argument('--node_list', type=str, required=True)
+    config.add_argument('--premine_list', type=str, required=False)
+    # Parses the input
+    args = parser.parse_args()
+    # Executes the method
+    if args.command == "init":
+        sdk_init()
+    elif args.command == "config":
+        node_config(args.node_list, args.premine_list)
     else:
-        print("No args passed.")
+        exit("No command given.")
