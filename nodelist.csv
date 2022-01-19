@@ -1,0 +1,5 @@
+ip,id,key,port,bootnode
+192.168.1.100,test0,key0,1478,True
+192.168.1.101,test2,key1,1478,False
+192.168.1.102,test2,key2,1478,False
+192.168.1.103,test3,key4,1478,False
