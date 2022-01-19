@@ -52,14 +52,14 @@ def sdk_init():
         os.chdir(__PATH)
         # SDK init
         logging.info("Generating secrets.")
-        command = "./"+__SDK_NAME + " secrets init --data-dir chain-data > node.info"
+        command = "./"+__SDK_NAME + " secrets init --data-dir data-dir > node.info"
         os.system(command)
     else:
         exit("Unable to download the SDK. Try again later or check the URL.")
 
 
-def node_config(node_list_path: str, premine_list_path: str):
-    # Nodes data retrival and nodes initialization
+def generate_genesis(node_list_path: str, premine_list_path: str):
+    # Read other validators data
     if os.path.exists(node_list_path):
         with open(node_list_path, 'r') as file:
             data = csv.reader(file, delimiter=',')
@@ -67,12 +67,12 @@ def node_config(node_list_path: str, premine_list_path: str):
             nodes = [Node(row[0], row[1], row[2], row[3], row[4] == "True")
                      for row in data]
     else:
-        exit("Config file not found. Path may be wrong.")
+        exit("node_list file not found. Path may be wrong.")
     n_bootnodes = 0
     n_validators = 0
     bootnodes = ""
     validators = ""
-    # genesis command creation
+    # genesis.json command creation
     for node in nodes:
         if node.is_bootnode():
             bootnodes += "--bootnode=" + node.get_multiaddr() + " "
@@ -82,7 +82,7 @@ def node_config(node_list_path: str, premine_list_path: str):
     logging.info("Found " + str(n_bootnodes) +
                  " bootnodes out of " + str(n_validators) + ".")
     command = "./" + __SDK_NAME + " genesis --consensus ibft " + validators + bootnodes
-    # Pre-mined balances based on premine file
+    # Adding pre-mined balances based on premine file
     if premine_list_path:
         if os.path.exists(premine_list_path):
             logging.info("Found premine file.")
@@ -99,6 +99,13 @@ def node_config(node_list_path: str, premine_list_path: str):
     os.system(command)
 
 
+def start_validator():
+    os.chdir(__PATH)
+    command = "./" + __SDK_NAME + \
+        " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 --seal"
+    os.system(command)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
     # CLI command parsing
@@ -108,17 +115,24 @@ if __name__ == "__main__":
     # Init command
     init = subparser.add_parser(
         "init", help="Download the SDK and initializes node secrets.")
-    # Config command
-    config = subparser.add_parser(
-        "config", help="Configures the genesis.json using a node_list and an optional premine_list.")
-    config.add_argument('--node_list', type=str, required=True)
-    config.add_argument('--premine_list', type=str, required=False)
+    # Config validator command
+    generate = subparser.add_parser(
+        "generate_genesis", help="Generates the genesis.json using a node_list and an optional premine_list.")
+    generate.add_argument('--node_list', type=str,
+                          default="./nodelist.csv", required=False)
+    generate.add_argument('--premine_list', type=str,
+                          default="./preminelist.csv", required=False)
+    # Start validator command
+    start = subparser.add_parser(
+        "start_validator", help="Starts a previously configured validator.")
     # Parses the input
     args = parser.parse_args()
     # Executes the method
     if args.command == "init":
         sdk_init()
-    elif args.command == "config":
-        node_config(args.node_list, args.premine_list)
+    elif args.command == "generate_genesis":
+        generate_genesis(args.node_list, args.premine_list)
+    elif args.command == "start_validator":
+        start_validator()
     else:
         exit("No command given.")
