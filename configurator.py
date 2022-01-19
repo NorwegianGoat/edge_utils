@@ -127,6 +127,8 @@ if __name__ == "__main__":
     # Start validator command
     start = subparser.add_parser(
         "start_validator", help="Starts a previously configured validator.")
+    start.add_argument('--ip', help="Your IP address.",
+                       type=str, required=True)
     # Parses the input
     args = parser.parse_args()
     # Executes the method
