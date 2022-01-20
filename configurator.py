@@ -6,6 +6,7 @@ import logging
 import time
 import csv
 import argparse
+import validators
 
 
 class Node:
@@ -31,6 +32,7 @@ __URL = "https://github.com/0xPolygon/polygon-edge/releases/download/v0.1.0/poly
 __PATH = "edge"
 __SDK_NAME = "polygon-sdk"
 __LOG_LEVEL = logging.INFO
+__NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 def sdk_init():
@@ -133,6 +135,17 @@ def restore_backup(backup_path: str):
         exit("Path does not exists. Please check the given path.")
 
 
+def benchmark_chain(jsonrpc: str, sender: str, receiver: str, tps: int, count: int):
+    os.chdir(__PATH)
+    if validators.url(jsonrpc):
+        command = "./" + __SDK_NAME + " loadbot --jsonrpc " + jsonrpc + \
+            " --sender " + sender + " --receiver " + receiver + " --count " + \
+            str(count) + " --value 0x100 --tps " + str(tps)
+        os.system(command)
+    else:
+        exit("Endpoint url is not valid.")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
     # CLI command parser
@@ -158,12 +171,31 @@ if __name__ == "__main__":
     backup = subparser.add_parser(
         "backup", help="Backups blockchain data and genesis.json file.")
     backup.add_argument(
-        "--backup_dest", help="The path in which the backup has to be saved.", default=__PATH, type=str, required=False)
+        "--backup_dest", help="The path in which the backup has to be saved.",
+        default=__PATH, type=str, required=False)
     # Restore data command
     restore = subparser.add_parser(
         "restore", help="Restores a blockchain backup.")
     restore.add_argument(
-        "--backup_path", help="Fullpath to the backup folder.", type=str, required=True)
+        "--backup_path", help="Fullpath to the backup folder.", type=str,
+        required=True)
+    # Benchmark: uses the loadbot to test the chain
+    benchmark = subparser.add_parser(
+        "loadbot", help="Stress test for the blockchain.")
+    benchmark.add_argument(
+        "--jsonrpc", help="The jsonrpc endpoint.", type=str, required=True)
+    benchmark.add_argument(
+        "--sender", help="The sender address. Public and private key must be an environment variable on your system.",
+        type=str, required=True)
+    benchmark.add_argument(
+        "--receiver", help="The receiver address. Default is null address.",
+        type=str, required=False, default=__NULL_ADDRESS)
+    benchmark.add_argument(
+        "--tps", help="The number of transaction per second to perform.",
+        type=int, required=False, default=100)
+    benchmark.add_argument(
+        "--count", help="The total number of transaction to perform.", type=int,
+        required=False, default=2000)
     # Parses the input
     args = parser.parse_args()
     # Executes the method
@@ -177,5 +209,8 @@ if __name__ == "__main__":
         backup_data(args.backup_dest)
     elif args.command == "restore":
         restore_backup(args.backup_path)
+    elif args.command == "loadbot":
+        benchmark_chain(args.jsonrpc, args.sender,
+                        args.receiver, args.tps, args.count)
     else:
         exit("Command not recognized.")
