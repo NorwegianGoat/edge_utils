@@ -121,9 +121,21 @@ def backup_data(backup_destination: str):
                     os.path.join(dest, "data-dir"))
 
 
+def restore_backup(backup_path: str):
+    if os.path.exists(backup_path):
+        shutil.rmtree(os.path.join(__PATH, "data-dir"))
+        os.remove(os.path.join(__PATH, "genesis.json"))
+        shutil.copy(os.path.join(backup_path, "genesis.json"),
+                    os.path.join(__PATH, "genesis.json"))
+        shutil.copytree(os.path.join(backup_path, "data-dir"),
+                        os.path.join(__PATH, "data-dir"))
+    else:
+        exit("Path does not exists. Please check the given path.")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
-    # CLI command parsing
+    # CLI command parser
     parser = argparse.ArgumentParser(
         description="Utility for edge-sdk configuration.")
     subparser = parser.add_subparsers(dest="command")
@@ -147,6 +159,11 @@ if __name__ == "__main__":
         "backup", help="Backups blockchain data and genesis.json file.")
     backup.add_argument(
         "--backup_dest", help="The path in which the backup has to be saved.", default=__PATH, type=str, required=False)
+    # Restore data command
+    restore = subparser.add_parser(
+        "restore", help="Restores a blockchain backup.")
+    restore.add_argument(
+        "--backup_path", help="Fullpath to the backup folder.", type=str, required=True)
     # Parses the input
     args = parser.parse_args()
     # Executes the method
@@ -158,5 +175,7 @@ if __name__ == "__main__":
         start_validator(args.ip)
     elif args.command == "backup":
         backup_data(args.backup_dest)
+    elif args.command == "restore":
+        restore_backup(args.backup_path)
     else:
         exit("Command not recognized.")
