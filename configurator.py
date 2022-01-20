@@ -1,5 +1,3 @@
-import grp
-import json
 import shutil
 import requests
 import tarfile
@@ -58,6 +56,7 @@ def sdk_init():
         # SDK init
         logging.info("Generating secrets.")
         command = "./"+__SDK_NAME + " secrets init --data-dir data-dir > node.info"
+        logging.debug(command)
         os.system(command)
     else:
         exit("Unable to download the SDK. Try again later or check the URL.")
@@ -101,6 +100,7 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
         else:
             exit("Premine file not found. Path may be wrong.")
     os.chdir(__PATH)
+    logging.debug(command)
     os.system(command)
     logging.info(
         "Now you need to give the genesis file to the other nodes, so that they can use it to start the chain.")
@@ -114,7 +114,7 @@ def start_validator(ip: str, jsonrpc: int, grpc: int):
     if ip != __LOCALHOST:
         command += "--nat " + ip + " "
     command += "--seal &"
-    print(command)
+    logging.debug(command)
     os.system(command)
 
 
@@ -145,6 +145,7 @@ def benchmark_chain(jsonrpc: str, sender: str, receiver: str, tps: int, count: i
         command = "./" + __SDK_NAME + " loadbot --jsonrpc " + jsonrpc + \
             " --sender " + sender + " --receiver " + receiver + " --count " + \
             str(count) + " --value 0x100 --tps " + str(tps)
+        logging.debug(command)
         os.system(command)
     else:
         exit("Endpoint url is not valid.")
