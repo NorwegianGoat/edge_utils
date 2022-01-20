@@ -105,12 +105,12 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
 
 def start_validator(ip: str):
     os.chdir(__PATH)
-    command = "./" + __SDK_NAME + \
+    command = "nohup ./" + __SDK_NAME + \
         " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 "
     if ip:
         command += "--nat " + ip + " "
     else:
-        command += "--seal"
+        command += "--seal &"
     os.system(command)
 
 
