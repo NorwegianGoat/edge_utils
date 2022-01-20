@@ -1,3 +1,5 @@
+import grp
+import json
 import shutil
 import requests
 import tarfile
@@ -33,6 +35,7 @@ __PATH = "edge"
 __SDK_NAME = "polygon-sdk"
 __LOG_LEVEL = logging.INFO
 __NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+__LOCALHOST = "127.0.0.1"
 
 
 def sdk_init():
@@ -103,14 +106,15 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
         "Now you need to give the genesis file to the other nodes, so that they can use it to start the chain.")
 
 
-def start_validator(ip: str):
+def start_validator(ip: str, jsonrpc: int, grpc: int):
     os.chdir(__PATH)
     command = "nohup ./" + __SDK_NAME + \
-        " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 "
-    if ip:
+        " server --data-dir data-dir --chain genesis.json --libp2p 0.0.0.0:1478 --grpc " + \
+        ip+":"+str(grpc) + " --jsonrpc " + ip+":" + str(jsonrpc) + " "
+    if ip != __LOCALHOST:
         command += "--nat " + ip + " "
-    else:
-        command += "--seal &"
+    command += "--seal &"
+    print(command)
     os.system(command)
 
 
@@ -165,8 +169,12 @@ if __name__ == "__main__":
     # Start validator command
     start = subparser.add_parser(
         "start_validator", help="Starts a previously configured validator.")
-    start.add_argument('--ip', help="Your IP address.",
-                       type=str, required=False)
+    start.add_argument('--ip', help="Your IP address. If you don't give this parameter jsonrpc and grpc will not be exposed.",
+                       type=str, required=False, default=__LOCALHOST)
+    start.add_argument('--jsonrpc', help="jsonrpc port",
+                       type=int, required=False, default=8545)
+    start.add_argument('--grpc', help="grpc port", type=int,
+                       required=False, default=10000)
     # Backup blockchain data command
     backup = subparser.add_parser(
         "backup", help="Backups blockchain data and genesis.json file.")
@@ -204,7 +212,7 @@ if __name__ == "__main__":
     elif args.command == "generate_genesis":
         generate_genesis(args.node_list, args.premine_list)
     elif args.command == "start_validator":
-        start_validator(args.ip)
+        start_validator(args.ip, args.jsonrpc, args.grpc)
     elif args.command == "backup":
         backup_data(args.backup_dest)
     elif args.command == "restore":
