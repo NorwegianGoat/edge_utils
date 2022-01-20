@@ -7,6 +7,7 @@ import time
 import csv
 import argparse
 import validators
+import subprocess
 
 
 class Node:
@@ -28,10 +29,10 @@ class Node:
         return '/ip4/' + self.ip + "/tcp/" + self.port + "/p2p/" + self.id
 
 
+__LOG_LEVEL = logging.DEBUG
 __URL = "https://github.com/0xPolygon/polygon-edge/releases/download/v0.1.0/polygon-sdk_0.1.0_linux_amd64.tar.gz"
 __PATH = "edge"
 __SDK_NAME = "polygon-sdk"
-__LOG_LEVEL = logging.INFO
 __NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 __LOCALHOST = "127.0.0.1"
 
@@ -118,6 +119,17 @@ def start_validator(ip: str, jsonrpc: int, grpc: int):
     os.system(command)
 
 
+def halt_node():
+    command = "pgrep " + __SDK_NAME
+    logging.debug(command)
+    try:
+        pid = str(int(subprocess.check_output(command, shell=True)))
+    except subprocess.CalledProcessError:
+        exit("Node seems to be inactive.")
+    logging.debug("Node pid: " + pid)
+    os.system("kill -15 " + pid)
+
+
 def backup_data(backup_destination: str):
     dest = os.path.join(backup_destination, "backup_"+str(time.time()))
     os.makedirs(dest)
@@ -176,6 +188,8 @@ if __name__ == "__main__":
                        type=int, required=False, default=8545)
     start.add_argument('--grpc', help="grpc port", type=int,
                        required=False, default=10000)
+    # Halt node
+    halt = subparser.add_parser("halt_node", help="Halts the running node.")
     # Backup blockchain data command
     backup = subparser.add_parser(
         "backup", help="Backups blockchain data and genesis.json file.")
@@ -214,6 +228,8 @@ if __name__ == "__main__":
         generate_genesis(args.node_list, args.premine_list)
     elif args.command == "start_validator":
         start_validator(args.ip, args.jsonrpc, args.grpc)
+    elif args.command == "halt_node":
+        halt_node()
     elif args.command == "backup":
         backup_data(args.backup_dest)
     elif args.command == "restore":
