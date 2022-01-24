@@ -208,14 +208,7 @@ def node_status():
         exit("Node seems to be inactive.")
 
 
-def _str_to_bool(str: str) -> bool:
-    if str == "True" or str == "true" or str == "y":
-        return True
-    return False
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=__LOG_LEVEL)
+def parser_config() -> argparse.ArgumentParser:
     # CLI command parser
     parser = argparse.ArgumentParser(
         description="Utility for edge-sdk configuration.")
@@ -283,6 +276,18 @@ if __name__ == "__main__":
     benchmark.add_argument(
         "--count", help="The total number of transaction to perform.", type=int,
         required=False, default=2000)
+    return parser
+
+
+def _str_to_bool(str: str) -> bool:
+    if str == "True" or str == "true" or str == "y":
+        return True
+    return False
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=__LOG_LEVEL)
+    parser = parser_config()
     # Parses the input
     args = parser.parse_args()
     # Executes the method
