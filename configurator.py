@@ -119,15 +119,24 @@ def start_validator(ip: str, jsonrpc: int, grpc: int):
     os.system(command)
 
 
-def halt_node():
+def _is_node_running():
     command = "pgrep " + __SDK_NAME
     logging.debug(command)
     try:
         pid = str(int(subprocess.check_output(command, shell=True)))
     except subprocess.CalledProcessError:
+        pid = False
+    finally:
+        return pid
+
+
+def halt_node():
+    pid = _is_node_running()
+    if pid:
+        logging.debug("Node pid: " + pid)
+        os.system("kill -15 " + pid)
+    else:
         exit("Node seems to be inactive.")
-    logging.debug("Node pid: " + pid)
-    os.system("kill -15 " + pid)
 
 
 def backup_data(backup_destination: str):
@@ -163,6 +172,16 @@ def benchmark_chain(jsonrpc: str, sender: str, receiver: str, tps: int, count: i
         exit("Endpoint url is not valid.")
 
 
+def node_status():
+    pid = _is_node_running()
+    if pid:
+        command = "tail " + os.path.join(__PATH, "nohup.out")
+        logging.debug(command)
+        os.system(command)
+    else:
+        exit("Node seems to be inactive.")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=__LOG_LEVEL)
     # CLI command parser
@@ -190,6 +209,8 @@ if __name__ == "__main__":
                        required=False, default=10000)
     # Halt node
     halt = subparser.add_parser("halt_node", help="Halts the running node.")
+    # Prints the node status
+    status = subparser.add_parser("status", help="Prints the node status")
     # Backup blockchain data command
     backup = subparser.add_parser(
         "backup", help="Backups blockchain data and genesis.json file.")
@@ -237,5 +258,7 @@ if __name__ == "__main__":
     elif args.command == "loadbot":
         benchmark_chain(args.jsonrpc, args.sender,
                         args.receiver, args.tps, args.count)
+    elif args.command == "status":
+        node_status()
     else:
         exit("Command not recognized.")
