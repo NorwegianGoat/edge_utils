@@ -93,7 +93,7 @@ def generate_genesis(node_list_path: str, premine_list_path: str):
                  " bootnodes out of " + str(n_validators) + ".")
     command = "./" + __SDK_NAME + " genesis --consensus ibft " + \
         validators + bootnodes + " --block-gas-limit 9000000 --chainid " + \
-        str(random.randint(0, 10000)) + " "
+        str(random.randint(0, 256)) + " "
     # Adding pre-mined balances based on premine file
     if premine_list_path:
         if os.path.exists(premine_list_path):
