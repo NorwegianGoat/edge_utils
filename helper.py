@@ -150,10 +150,13 @@ def _bc_data_exists() -> bool:
     return False
 
 
-def backup_data(backup_destination: str, backup_prefix: str):
+def backup_data(backup_destination: str, backup_name: str):
     if _bc_data_exists():
-        dest = os.path.join(backup_destination,
-                            backup_prefix+"_" + str(time.time()))
+        if backup_name:
+            dest = os.path.join(backup_destination, backup_name)
+        else:
+            dest = os.path.join(backup_destination,
+                                backup_name+"_" + str(time.time()))
         os.makedirs(dest)
         shutil.copy(__GENESIS_PATH,
                     os.path.join(dest, "genesis.json"))
@@ -243,7 +246,7 @@ def parser_config() -> argparse.ArgumentParser:
         "--backup_dest", help="The path in which the backup has to be saved.",
         default=__PATH, type=str, required=False)
     backup.add_argument(
-        "--backup_prefix", help="The backup prefix name.",
+        "--backup_name", help="The backup name.",
         default="backup", type=str, required=False)
     # Restore data command
     restore = subparser.add_parser(
@@ -300,7 +303,7 @@ if __name__ == "__main__":
     elif args.command == "halt_node":
         halt_node()
     elif args.command == "backup":
-        backup_data(args.backup_dest, args.backup_prefix)
+        backup_data(args.backup_dest, args.backup_name)
     elif args.command == "restore":
         restore_backup(args.backup_path)
     elif args.command == "reset":
