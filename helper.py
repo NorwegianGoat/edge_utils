@@ -152,18 +152,18 @@ def _bc_data_exists() -> bool:
     return False
 
 
-def backup_data(backup_destination: str, backup_name: str):
+def backup_data(backup_destination: str, backup_name: str, override:bool):
     if _bc_data_exists():
         if backup_name:
             dest = os.path.join(backup_destination, backup_name)
         else:
             dest = os.path.join(backup_destination,
                                 backup_name+"_" + str(time.time()))
-        os.makedirs(dest)
+        os.makedirs(dest, exists_ok=override)
         shutil.copy(__GENESIS_PATH,
                     os.path.join(dest, "genesis.json"))
         shutil.copytree(__DATA_DIR_PATH,
-                        os.path.join(dest, __DATA_DIR_NAME))
+                        os.path.join(dest, __DATA_DIR_NAME), dirs_exists_ok=override)
     else:
         exit("Blockchain data not consistent. Unable to backup.")
 
