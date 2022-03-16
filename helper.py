@@ -152,7 +152,7 @@ def _bc_data_exists() -> bool:
     return False
 
 
-def backup_data(backup_destination: str, backup_name: str, override: bool):
+def backup_data(backup_destination: str, backup_name: str, override: bool = False):
     if _bc_data_exists():
         if backup_name:
             dest = os.path.join(backup_destination, backup_name)
