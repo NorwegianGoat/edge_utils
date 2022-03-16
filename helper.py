@@ -152,7 +152,7 @@ def _bc_data_exists() -> bool:
     return False
 
 
-def backup_data(backup_destination: str, backup_name: str, override:bool):
+def backup_data(backup_destination: str, backup_name: str, override: bool):
     if _bc_data_exists():
         if backup_name:
             dest = os.path.join(backup_destination, backup_name)
@@ -161,8 +161,9 @@ def backup_data(backup_destination: str, backup_name: str, override:bool):
                                 backup_name+"_" + str(time.time()))
         if os.path.exists(dest) and override:
             shutil.rmtree(dest)
-        else:
-            exit("A backup with the same name exists and override parameter was set to False!")
+        elif os.path.exists(dest) and override == False:
+            exit(
+                "A backup with the same name exists and override parameter was set to False!")
         os.makedirs(dest)
         shutil.copy(__GENESIS_PATH,
                     os.path.join(dest, "genesis.json"))
