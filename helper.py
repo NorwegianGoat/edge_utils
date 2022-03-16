@@ -250,6 +250,9 @@ def parser_config() -> argparse.ArgumentParser:
     backup.add_argument(
         "--backup_name", help="The backup name.",
         default="backup", type=str, required=False)
+    backup.add_argument(
+        "--override", help="Whether to override the backup or not if a backup with the same name already exists.",
+        default="False", type=str, required=False)
     # Restore data command
     restore = subparser.add_parser(
         "restore", help="Restores a blockchain backup.")
@@ -305,7 +308,8 @@ if __name__ == "__main__":
     elif args.command == "halt_node":
         halt_node()
     elif args.command == "backup":
-        backup_data(args.backup_dest, args.backup_name)
+        backup_data(args.backup_dest, args.backup_name,
+                    _str_to_bool(args.override))
     elif args.command == "restore":
         restore_backup(args.backup_path)
     elif args.command == "reset":
