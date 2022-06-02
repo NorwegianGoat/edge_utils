@@ -199,7 +199,7 @@ def benchmark_chain(jsonrpc: str, sender: str, receiver: str, tps: int, count: i
 
 def reset_chain(is_hard_reset: bool, make_backup: bool):
     if make_backup:
-        backup_data(__PATH, "reset")
+        backup_data(__PATH, "reset"+str(int(time.time())))
     if _bc_data_exists():
         if(is_hard_reset):
             os.remove(__GENESIS_PATH)
